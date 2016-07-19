@@ -4,54 +4,58 @@ provider "aws" {
   region = "${var.aws_default_region}"
 }
 
-resource "aws_vpc" "my_vpc" {
+resource "aws_key_pair" "my_key_pair" {
+  key_name = "my_key_pair"
+  public_key = "${var.aws_public_key}"
+}
+
+resource "aws_vpc" "vpc1" {
   cidr_block = "192.168.0.0/16"
   instance_tenancy = "default"
   enable_dns_support = "true"
   enable_dns_hostnames = "false"
   tags {
-    Name = "my_vpc"
+    Name = "vpc1"
   }
 }
 
-resource "aws_internet_gateway" "my_gateway" {
-  vpc_id = "${aws_vpc.my_vpc.id}"
+resource "aws_internet_gateway" "vpc1_gateway" {
+  vpc_id = "${aws_vpc.vpc1.id}"
 }
 
-resource "aws_subnet" "public_a" {
-  vpc_id = "${aws_vpc.my_vpc.id}"
+resource "aws_subnet" "vpc1_subnet_a" {
+  vpc_id = "${aws_vpc.vpc1.id}"
   cidr_block = "192.168.1.0/24"
   availability_zone = "ap-northeast-1a"
 }
 
-resource "aws_subnet" "public_c" {
-  vpc_id = "${aws_vpc.my_vpc.id}"
+resource "aws_subnet" "vpc1_subnet_c" {
+  vpc_id = "${aws_vpc.vpc1.id}"
   cidr_block = "192.168.2.0/24"
   availability_zone = "ap-northeast-1c"
 }
 
-resource "aws_route_table" "public_route" {
-  vpc_id = "${aws_vpc.my_vpc.id}"
+resource "aws_route_table" "vpc1_route" {
+  vpc_id = "${aws_vpc.vpc1.id}"
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = "${aws_internet_gateway.my_gateway.id}"
+    gateway_id = "${aws_internet_gateway.vpc1_gateway.id}"
   }
 }
 
-resource "aws_route_table_association" "public_a_association" {
-  subnet_id = "${aws_subnet.public_a.id}"
-  route_table_id = "${aws_route_table.public_route.id}"
+resource "aws_route_table_association" "vpc1_route_a_association" {
+  subnet_id = "${aws_subnet.vpc1_subnet_a.id}"
+  route_table_id = "${aws_route_table.vpc1_route.id}"
 }
 
-resource "aws_route_table_association" "public_c_association" {
-  subnet_id = "${aws_subnet.public_c.id}"
-  route_table_id = "${aws_route_table.public_route.id}"
+resource "aws_route_table_association" "vpc1_route_c_association" {
+  subnet_id = "${aws_subnet.vpc1_subnet_c.id}"
+  route_table_id = "${aws_route_table.vpc1_route.id}"
 }
 
-resource "aws_security_group" "my_security" {
-  name = "my_security"
-  description = "Allow SSH inbound traffic"
-  vpc_id = "${aws_vpc.my_vpc.id}"
+resource "aws_security_group" "vpc1_security" {
+  name = "vpc1_security"
+  vpc_id = "${aws_vpc.vpc1.id}"
   ingress {
     from_port = 22
     to_port = 22
@@ -66,19 +70,14 @@ resource "aws_security_group" "my_security" {
   }
 }
 
-resource "aws_key_pair" "my_key_pair" {
-  key_name = "my_key_pair"
-  public_key = "${var.aws_public_key}"
-}
-
-resource "aws_instance" "my_instance" {
+resource "aws_instance" "instance_a" {
   ami = "ami-a21529cc"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.my_key_pair.key_name}"
   vpc_security_group_ids = [
-    "${aws_security_group.my_security.id}"
+    "${aws_security_group.vpc1_security.id}"
   ]
-  subnet_id = "${aws_subnet.public_a.id}"
+  subnet_id = "${aws_subnet.vpc1_subnet_a.id}"
   associate_public_ip_address = "true"
   root_block_device = {
     volume_type = "gp2"
@@ -86,6 +85,6 @@ resource "aws_instance" "my_instance" {
   }
 }
 
-output "public ip of my_instance" {
-  value = "${aws_instance.my_instance.public_ip}"
+output "public ip of instance a" {
+  value = "${aws_instance.instance_a.public_ip}"
 }
