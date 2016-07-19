@@ -62,6 +62,12 @@ resource "aws_security_group" "vpc1_security" {
     protocol = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  ingress {
+    from_port = 80
+    to_port = 80
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
   egress {
     from_port = 0
     to_port = 0
@@ -85,6 +91,56 @@ resource "aws_instance" "instance_a" {
   }
 }
 
+resource "aws_instance" "instance_b" {
+  ami = "ami-a21529cc"
+  instance_type = "t2.micro"
+  key_name = "${aws_key_pair.my_key_pair.key_name}"
+  vpc_security_group_ids = [
+    "${aws_security_group.vpc1_security.id}"
+  ]
+  subnet_id = "${aws_subnet.vpc1_subnet_c.id}"
+  associate_public_ip_address = "true"
+  root_block_device = {
+    volume_type = "gp2"
+    volume_size = "8"
+  }
+}
+
+resource "aws_elb" "instance_elb" {
+  name = "instance-elb"
+  subnets = [
+    "${aws_subnet.vpc1_subnet_a.id}",
+    "${aws_subnet.vpc1_subnet_c.id}",
+  ]
+  security_groups = [
+    "${aws_security_group.vpc1_security.id}",
+  ]
+  listener {
+    instance_port = 80
+    instance_protocol = "http"
+    lb_port = 80
+    lb_protocol = "http"
+  }
+  health_check {
+    healthy_threshold = 2
+    unhealthy_threshold = 2
+    timeout = 5
+    target = "HTTP:80/"
+    interval = 30
+  }
+  instances = [
+    "${aws_instance.instance_a.id}",
+    "${aws_instance.instance_b.id}",
+  ]
+  cross_zone_load_balancing = true
+  connection_draining = true
+  connection_draining_timeout = 400
+}
+
 output "public ip of instance a" {
   value = "${aws_instance.instance_a.public_ip}"
+}
+
+output "public ip of instance b" {
+  value = "${aws_instance.instance_b.public_ip}"
 }
