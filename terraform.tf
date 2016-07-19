@@ -24,6 +24,12 @@ resource "aws_subnet" "public_a" {
   availability_zone = "ap-northeast-1a"
 }
 
+resource "aws_subnet" "public_c" {
+  vpc_id = "${aws_vpc.my_vpc.id}"
+  cidr_block = "192.168.2.0/24"
+  availability_zone = "ap-northeast-1c"
+}
+
 resource "aws_route_table" "public_route" {
   vpc_id = "${aws_vpc.my_vpc.id}"
   route {
@@ -34,6 +40,11 @@ resource "aws_route_table" "public_route" {
 
 resource "aws_route_table_association" "public_a_association" {
   subnet_id = "${aws_subnet.public_a.id}"
+  route_table_id = "${aws_route_table.public_route.id}"
+}
+
+resource "aws_route_table_association" "public_c_association" {
+  subnet_id = "${aws_subnet.public_c.id}"
   route_table_id = "${aws_route_table.public_route.id}"
 }
 
