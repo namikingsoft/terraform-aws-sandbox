@@ -5,7 +5,7 @@ provider "aws" {
 }
 
 resource "aws_vpc" "my_vpc" {
-  cidr_block = "10.1.0.0/16"
+  cidr_block = "192.168.0.0/16"
   instance_tenancy = "default"
   enable_dns_support = "true"
   enable_dns_hostnames = "false"
@@ -20,7 +20,7 @@ resource "aws_internet_gateway" "my_gateway" {
 
 resource "aws_subnet" "public_a" {
   vpc_id = "${aws_vpc.my_vpc.id}"
-  cidr_block = "10.1.1.0/24"
+  cidr_block = "192.168.1.0/24"
   availability_zone = "ap-northeast-1a"
 }
 
