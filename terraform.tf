@@ -199,8 +199,8 @@ resource "aws_instance" "httpd_c" {
 resource "aws_elb" "httpd_elb" {
   name = "instance-elb"
   subnets = [
-    "${aws_subnet.vpc1_private_a.id}",
-    "${aws_subnet.vpc1_private_c.id}",
+    "${aws_subnet.vpc1_public_a.id}",
+    "${aws_subnet.vpc1_public_c.id}",
   ]
   security_groups = [
     "${aws_security_group.vpc1_security_allow_http.id}",
