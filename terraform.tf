@@ -40,16 +40,23 @@ resource "aws_subnet" "vpc1_public_a" {
   map_public_ip_on_launch = true
 }
 
-resource "aws_subnet" "vpc1_private_a" {
+resource "aws_subnet" "vpc1_public_c" {
   vpc_id = "${aws_vpc.vpc1.id}"
   cidr_block = "192.168.1.0/24"
+  availability_zone = "ap-northeast-1c"
+  map_public_ip_on_launch = true
+}
+
+resource "aws_subnet" "vpc1_private_a" {
+  vpc_id = "${aws_vpc.vpc1.id}"
+  cidr_block = "192.168.10.0/24"
   availability_zone = "ap-northeast-1a"
   map_public_ip_on_launch = false
 }
 
 resource "aws_subnet" "vpc1_private_c" {
   vpc_id = "${aws_vpc.vpc1.id}"
-  cidr_block = "192.168.2.0/24"
+  cidr_block = "192.168.11.0/24"
   availability_zone = "ap-northeast-1c"
   map_public_ip_on_launch = false
 }
@@ -72,6 +79,11 @@ resource "aws_route_table" "vpc1_private_route" {
 
 resource "aws_route_table_association" "vpc1_route_public_a_association" {
   subnet_id = "${aws_subnet.vpc1_public_a.id}"
+  route_table_id = "${aws_route_table.vpc1_public_route.id}"
+}
+
+resource "aws_route_table_association" "vpc1_route_public_c_association" {
+  subnet_id = "${aws_subnet.vpc1_public_c.id}"
   route_table_id = "${aws_route_table.vpc1_public_route.id}"
 }
 
@@ -141,7 +153,8 @@ resource "aws_instance" "bastion" {
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.my_key_pair.key_name}"
   vpc_security_group_ids = [
-    "${aws_security_group.vpc1_security_allow_ssh.id}"
+    "${aws_security_group.vpc1_security_allow_ssh.id}",
+    "${aws_security_group.vpc1_security_allow_all.id}"
   ]
   subnet_id = "${aws_subnet.vpc1_public_a.id}"
   associate_public_ip_address = "true"
@@ -156,11 +169,11 @@ resource "aws_instance" "httpd_a" {
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.my_key_pair.key_name}"
   vpc_security_group_ids = [
-    "${aws_security_group.vpc1_security_allow_all.id}"
+    "${aws_security_group.vpc1_security_allow_all.id}",
   ]
   subnet_id = "${aws_subnet.vpc1_private_a.id}"
   associate_public_ip_address = false
-  private_ip = "192.168.1.10"
+  private_ip = "192.168.10.10"
   root_block_device = {
     volume_type = "gp2"
     volume_size = "8"
@@ -172,11 +185,11 @@ resource "aws_instance" "httpd_c" {
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.my_key_pair.key_name}"
   vpc_security_group_ids = [
-    "${aws_security_group.vpc1_security_allow_all.id}"
+    "${aws_security_group.vpc1_security_allow_all.id}",
   ]
   subnet_id = "${aws_subnet.vpc1_private_c.id}"
   associate_public_ip_address = false
-  private_ip = "192.168.2.10"
+  private_ip = "192.168.11.10"
   root_block_device = {
     volume_type = "gp2"
     volume_size = "8"
@@ -191,6 +204,7 @@ resource "aws_elb" "httpd_elb" {
   ]
   security_groups = [
     "${aws_security_group.vpc1_security_allow_http.id}",
+    "${aws_security_group.vpc1_security_allow_all.id}",
   ]
   listener {
     instance_port = 80
