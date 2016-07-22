@@ -1,3 +1,4 @@
 aws_access_key=""
 aws_secret_key=""
-aws_public_key="ssh-rsa AAAA..."
+aws_public_key="/path/to/id_rsa.pub"
+aws_private_key="/path/to/id_rsa"
