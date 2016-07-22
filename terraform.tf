@@ -6,7 +6,7 @@ provider "aws" {
 
 resource "aws_key_pair" "my_key_pair" {
   key_name = "my_key_pair"
-  public_key = "${var.aws_public_key}"
+  public_key = "${file(var.aws_public_key)}"
 }
 
 resource "aws_eip" "nat" {
@@ -178,6 +178,19 @@ resource "aws_instance" "httpd_a" {
     volume_type = "gp2"
     volume_size = "8"
   }
+  provisioner "remote-exec" {
+    connection {
+      type = "ssh"
+      user = "ubuntu"
+      host = "${aws_instance.httpd_a.private_ip}"
+      private_key = "${file(var.aws_private_key)}"
+      bastion_host = "${aws_instance.bastion.public_ip}"
+    }
+    inline = [
+      "sudo apt-get update",
+      "sudo apt-get install -y nginx",
+    ]
+  }
 }
 
 resource "aws_instance" "httpd_c" {
@@ -193,6 +206,19 @@ resource "aws_instance" "httpd_c" {
   root_block_device = {
     volume_type = "gp2"
     volume_size = "8"
+  }
+  provisioner "remote-exec" {
+    connection {
+      type = "ssh"
+      user = "ubuntu"
+      host = "${aws_instance.httpd_c.private_ip}"
+      private_key = "${file(var.aws_private_key)}"
+      bastion_host = "${aws_instance.bastion.public_ip}"
+    }
+    inline = [
+      "sudo apt-get update",
+      "sudo apt-get install -y nginx",
+    ]
   }
 }
 
@@ -230,4 +256,8 @@ resource "aws_elb" "httpd_elb" {
 
 output "public ip of bastion" {
   value = "${aws_instance.bastion.public_ip}"
+}
+
+output "public dns name of elb" {
+  value = "${aws_elb.httpd_elb.dns_name}"
 }
