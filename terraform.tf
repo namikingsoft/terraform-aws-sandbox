@@ -257,3 +257,7 @@ resource "aws_elb" "httpd_elb" {
 output "public ip of bastion" {
   value = "${aws_instance.bastion.public_ip}"
 }
+
+output "public dns name of elb" {
+  value = "${aws_elb.httpd_elb.dns_name}"
+}
